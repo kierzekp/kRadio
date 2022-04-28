@@ -1,0 +1,8 @@
+{
+    "led_screen": {
+        "width": 15,
+        "font": "Digital-7 Mono"
+    },
+    "presets": [
+    ]
+}

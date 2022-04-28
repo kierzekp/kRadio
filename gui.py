@@ -1,7 +1,7 @@
 from common import ApplicationConfig
 
-from PySide2.QtGui import QColor, QFont, QFontDatabase, QPalette
-from PySide2.QtWidgets import QLabel, QMainWindow, QVBoxLayout, QWidget
+from PySide2.QtGui import QColor, QFontDatabase, QPalette
+from PySide2.QtWidgets import QDial, QLabel, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 
 class MainWindow(QMainWindow):
     def __init__(self, config: ApplicationConfig) -> None:
@@ -53,3 +53,18 @@ class LEDScreen(QLabel):
 class ControlPanel(QWidget):
     def __init__(self) -> None:
         super().__init__()
+        self._initialize_widget()
+
+
+    def _initialize_widget(self) -> None:
+        layout = QHBoxLayout()
+
+        self.preset_chooser = QWidget() # placeholder
+        layout.addWidget(self.preset_chooser)
+
+        self.dial = QDial()
+        self.dial.setRange(0, 100)
+        self.dial.setSingleStep(1)
+        layout.addWidget(self.dial)
+
+        self.setLayout(layout)
