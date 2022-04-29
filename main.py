@@ -1,6 +1,7 @@
 from common import ApplicationConfig
 from gui import MainWindow
 
+from PySide2.QtCore import QThreadPool
 from PySide2.QtGui import QFontDatabase
 from PySide2.QtWidgets import QApplication
 
@@ -17,4 +18,13 @@ if __name__ == "__main__":
 
     window = MainWindow(config)
     window.show()
+
+    thread_pool = QThreadPool()
+    
+    for runnable in config.registered_runnables.values():
+        thread_pool.start(runnable)
+
     app.exec_()
+
+    for runnable in config.registered_runnables.values():
+        runnable.kill()

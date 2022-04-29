@@ -1,7 +1,8 @@
 {
     "led_screen": {
         "width": 15,
-        "font": "Digital-7 Mono"
+        "font": "Digital-7 Mono",
+        "frequency": 5
     },
     "presets": [
     ]
