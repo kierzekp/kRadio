@@ -17,6 +17,7 @@ if __name__ == "__main__":
     register_included_fonts()
 
     window = MainWindow(config)
+    window.setWindowTitle("kRadio")
     window.show()
 
     thread_pool = QThreadPool()
