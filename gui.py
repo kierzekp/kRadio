@@ -4,7 +4,7 @@ from common import ApplicationConfig
 
 from PySide2.QtCore import QRunnable, Slot
 from PySide2.QtGui import QColor, QFontDatabase, QPalette
-from PySide2.QtWidgets import QDial, QLabel, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
+from PySide2.QtWidgets import QDial, QGridLayout, QLabel, QMainWindow, QPushButton, QStyle, QHBoxLayout, QVBoxLayout, QWidget
 
 class MainWindow(QMainWindow):
     def __init__(self, config: ApplicationConfig) -> None:
@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
         self.led_screen = LEDScreen(self.config)
         layout.addWidget(self.led_screen)
 
-        self.control_panel = ControlPanel()
+        self.control_panel = ControlPanel(self.config)
         layout.addWidget(self.control_panel)
 
         container.setLayout(layout)
@@ -106,20 +106,72 @@ class LEDScreenScrollTask(QRunnable):
 
 
 class ControlPanel(QWidget):
-    def __init__(self) -> None:
+    def __init__(self, config: ApplicationConfig) -> None:
         super().__init__()
+        self.config = config
         self._initialize_widget()
 
 
     def _initialize_widget(self) -> None:
         layout = QHBoxLayout()
 
-        self.preset_chooser = QWidget() # placeholder
+        self.preset_chooser = PresetChooser(self.config)
         layout.addWidget(self.preset_chooser)
+
+        self.playback_controls = PlaybackControls()
+        layout.addWidget(self.playback_controls)
+
+        self.setLayout(layout)
+
+
+class PresetChooser(QWidget):
+    def __init__(self, config: ApplicationConfig) -> None:
+        super().__init__()
+        self.config = config
+
+        self.presets = ["1", "2", "3", "4", "5", "6"]
+
+        self._initialize_widget()
+
+    def _initialize_widget(self) -> None:
+        layout = QGridLayout()
+
+        first_row_length = int(len(self.presets) // 2)
+
+        for index in range(0, first_row_length):
+            preset = self.presets[index]
+            preset_button = QPushButton()
+            preset_button.setText(str(index))
+
+            layout.addWidget(preset_button, 0, index)
+
+        for index in range(first_row_length, len(self.presets)):
+            preset = self.presets[index]
+            preset_button = QPushButton()
+            preset_button.setText(str(index))
+
+            layout.addWidget(preset_button, 1, index-first_row_length)
+
+        self.setLayout(layout)
+
+
+class PlaybackControls(QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+        self._initialize_widget()
+
+    def _initialize_widget(self) -> None:
+        layout = QVBoxLayout()
 
         self.dial = QDial()
         self.dial.setRange(0, 100)
         self.dial.setSingleStep(1)
         layout.addWidget(self.dial)
+
+        self.playback_button = QPushButton()
+        button_style = self.playback_button.style()
+        icon = button_style.standardIcon(QStyle.SP_MediaPlay)
+        self.playback_button.setIcon(icon)
+        layout.addWidget(self.playback_button)
 
         self.setLayout(layout)
