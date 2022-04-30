@@ -1,3 +1,4 @@
+from audio import AudioPlayer
 from common import ApplicationConfig
 from gui_threading import GUIThreadingManager
 
@@ -5,8 +6,9 @@ from PySide2.QtGui import QColor, QFontDatabase, QPalette
 from PySide2.QtWidgets import QDial, QGridLayout, QLabel, QMainWindow, QPushButton, QStyle, QHBoxLayout, QVBoxLayout, QWidget
 
 class MainWindow(QMainWindow):
-    def __init__(self, config: ApplicationConfig, gui_threading_manager: GUIThreadingManager) -> None:
+    def __init__(self, config: ApplicationConfig, gui_threading_manager: GUIThreadingManager, audio_player: AudioPlayer) -> None:
         super().__init__()
+        self.audio_player = audio_player
         self.config = config
         self.gtm = gui_threading_manager
 
@@ -21,7 +23,7 @@ class MainWindow(QMainWindow):
         self.led_screen = LEDScreen(self.config, self.gtm)
         layout.addWidget(self.led_screen)
 
-        self.control_panel = ControlPanel(self.config)
+        self.control_panel = ControlPanel(self.config, self.audio_player)
         layout.addWidget(self.control_panel)
 
         container.setLayout(layout)
@@ -58,8 +60,9 @@ class LEDScreen(QLabel):
         return string
 
 class ControlPanel(QWidget):
-    def __init__(self, config: ApplicationConfig) -> None:
+    def __init__(self, config: ApplicationConfig, audio_player: AudioPlayer) -> None:
         super().__init__()
+        self.audio_player = audio_player
         self.config = config
         self._initialize_widget()
 
@@ -70,7 +73,7 @@ class ControlPanel(QWidget):
         self.preset_chooser = PresetChooser(self.config)
         layout.addWidget(self.preset_chooser)
 
-        self.playback_controls = PlaybackControls()
+        self.playback_controls = PlaybackControls(self.audio_player)
         layout.addWidget(self.playback_controls)
 
         self.setLayout(layout)
@@ -108,8 +111,10 @@ class PresetChooser(QWidget):
 
 
 class PlaybackControls(QWidget):
-    def __init__(self) -> None:
+    def __init__(self, audio_player: AudioPlayer) -> None:
         super().__init__()
+        self.audio_player = audio_player
+
         self._initialize_widget()
 
     def _initialize_widget(self) -> None:
@@ -117,7 +122,9 @@ class PlaybackControls(QWidget):
 
         self.dial = QDial()
         self.dial.setRange(0, 100)
+        self.dial.setValue(50)
         self.dial.setSingleStep(1)
+        self.dial.valueChanged.connect(self.on_dial_change)
         layout.addWidget(self.dial)
 
         self.playback_button = QPushButton()
@@ -125,18 +132,23 @@ class PlaybackControls(QWidget):
         icon = button_style.standardIcon(QStyle.SP_MediaPlay)
         self.playback_button.setIcon(icon)
         self.playing = False
-        self.playback_button.clicked.connect(self.change_button_symbol)
+        self.playback_button.clicked.connect(self.on_click)
 
         layout.addWidget(self.playback_button)
 
         self.setLayout(layout)
 
-    def change_button_symbol(self):
+    def on_dial_change(self):
+        self.audio_player.set_volume(self.dial.value())
+
+    def on_click(self):
+        self.change_playback_status()
+        self.control_playback()
+
+    def change_playback_status(self):
         style = self.playback_button.style()
         play_icon = style.standardIcon(QStyle.SP_MediaPlay)
         stop_icon = style.standardIcon(QStyle.SP_MediaStop)
-
-        print(self.playing)
 
         if not self.playing:
             self.playback_button.setIcon(stop_icon)
@@ -145,3 +157,9 @@ class PlaybackControls(QWidget):
             self.playback_button.setIcon(play_icon)
             self.playing = False
         self.playback_button.update()
+
+    def control_playback(self):
+        if self.playing:
+            self.audio_player.play_media()
+        else:
+            self.audio_player.stop_media()

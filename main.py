@@ -1,3 +1,4 @@
+from audio import AudioPlayer
 from common import ApplicationConfig
 from gui import MainWindow
 from gui_threading import GUIThreadingManager
@@ -16,10 +17,12 @@ if __name__ == "__main__":
     config = ApplicationConfig()
     thread_pool = QThreadPool()
     gui_threading_manager = GUIThreadingManager(thread_pool)
+    audio_player = AudioPlayer()
+    audio_player.set_media("https://stream.rcs.revma.com/an1ugyygzk8uv")
 
     register_included_fonts()
 
-    window = MainWindow(config, gui_threading_manager)
+    window = MainWindow(config, gui_threading_manager, audio_player)
     window.setWindowTitle("kRadio")
     window.show()
 
