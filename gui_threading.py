@@ -1,5 +1,5 @@
 from time import sleep
-from queue import Queue, SimpleQueue
+from queue import Queue
 
 from PySide2.QtCore import QRunnable, QThreadPool, Slot
 from PySide2.QtWidgets import QLabel
@@ -7,33 +7,76 @@ from PySide2.QtWidgets import QLabel
 class GUIThreadingManager:
     def __init__(self, thread_pool = QThreadPool) -> None:
         self.thread_pool = thread_pool
+        self.task_queue_manager = TaskQueueManager(self)
 
         self.led_screen = None
         self.current_led_screen_task: LEDScreenScrollTask = None
-        self.led_screen_tasks = SimpleQueue()
+        self.led_screen_tasks = Queue()
+
+        self.thread_pool.start(self.task_queue_manager)
 
     def register_led_screen(self, led_screen: QLabel) -> None:
         self.led_screen = led_screen
 
-    def set_current_led_screen_task(self, text_to_scroll: str, duration: int = -1):
-        self.current_led_screen_task = LEDScreenScrollTask(self.led_screen, text_to_scroll, duration)
+    def add_led_screen_task_to_queue(self, text_to_scroll: str, duration: int = -1):
+        task_desc = {"text_to_scroll": text_to_scroll, "duration": duration}
+        self.led_screen_tasks.put(task_desc)
+
+    def set_current_led_screen_task(self, task_desc: dict):
+        self.current_led_screen_task = LEDScreenScrollTask(self.led_screen, task_desc)
         self.thread_pool.start(self.current_led_screen_task)
 
-    def stop_current_led_screen_task(self):
+    def kill_running_threads(self):
+        if self.task_queue_manager is not None:
+            self.task_queue_manager.clear_queue()
+            self.task_queue_manager.kill()
         if self.current_led_screen_task is not None:
             self.current_led_screen_task.kill()
+        
 
+class TaskQueueManager(QRunnable):
+    def __init__(self, gui_threading_manager: GUIThreadingManager) -> None:
+        super().__init__()
+        self.gtm = gui_threading_manager
+
+        self.is_killed = False
+        self.to_clear_queue = False
+
+    @Slot()
+    def run(self):
+        while True:
+            if self.is_killed:
+                return
+            if self.to_clear_queue:
+                while not self.gtm.led_screen_tasks.empty():
+                    self.gtm.led_screen_tasks.get()
+                self.to_clear_queue = False
+            self.process_queue()
+            sleep(0.1)
+
+    def process_queue(self):
+        if not self.gtm.led_screen_tasks.empty():
+            if self.gtm.current_led_screen_task is None or self.gtm.current_led_screen_task.is_killed:
+                self.gtm.set_current_led_screen_task(self.gtm.led_screen_tasks.get())
+
+    def clear_queue(self):
+        self.to_clear_queue = True
+
+    def kill(self):
+        self.is_killed = True
+
+    
 
 class LEDScreenScrollTask(QRunnable):
-    def __init__(self, led_screen: QLabel, text_to_scroll: str, duration: int = -1) -> None:
+    def __init__(self, led_screen: QLabel, task_desc: dict) -> None:
         super().__init__()
 
-        self.duration = duration
+        self.duration = int(task_desc["duration"])
 
         self.time_between_updates = 0.5
         self.led_screen = led_screen
-        self.text_to_scroll = text_to_scroll
-        self.text_to_display = text_to_scroll
+        self.text_to_scroll = task_desc["text_to_scroll"]
+        self.text_to_display = self.text_to_scroll
 
         self.current_text_offset = 0
 
@@ -45,7 +88,10 @@ class LEDScreenScrollTask(QRunnable):
             while True:
                 if self.is_killed:
                     return
-                self.single_loop()
+                try:
+                    self.single_loop()
+                except RuntimeError:
+                    return
 
         else:
             times_to_cycle = int(self.duration / self.time_between_updates)

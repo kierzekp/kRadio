@@ -23,8 +23,11 @@ if __name__ == "__main__":
     window.setWindowTitle("kRadio")
     window.show()
 
-    gui_threading_manager.set_current_led_screen_task("1234567890test")
+    gui_threading_manager.add_led_screen_task_to_queue("100", 2)
+    gui_threading_manager.add_led_screen_task_to_queue("200", 2)
+    gui_threading_manager.add_led_screen_task_to_queue("300", 2)
+    gui_threading_manager.add_led_screen_task_to_queue("end of test")
 
     app.exec_()
 
-    gui_threading_manager.stop_current_led_screen_task()
+    gui_threading_manager.kill_running_threads()
