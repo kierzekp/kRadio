@@ -124,6 +124,24 @@ class PlaybackControls(QWidget):
         button_style = self.playback_button.style()
         icon = button_style.standardIcon(QStyle.SP_MediaPlay)
         self.playback_button.setIcon(icon)
+        self.playing = False
+        self.playback_button.clicked.connect(self.change_button_symbol)
+
         layout.addWidget(self.playback_button)
 
         self.setLayout(layout)
+
+    def change_button_symbol(self):
+        style = self.playback_button.style()
+        play_icon = style.standardIcon(QStyle.SP_MediaPlay)
+        stop_icon = style.standardIcon(QStyle.SP_MediaStop)
+
+        print(self.playing)
+
+        if not self.playing:
+            self.playback_button.setIcon(stop_icon)
+            self.playing = True
+        else:
+            self.playback_button.setIcon(play_icon)
+            self.playing = False
+        self.playback_button.update()
