@@ -23,7 +23,7 @@ class MainWindow(QMainWindow):
         self.led_screen = LEDScreen(self.config, self.gtm)
         layout.addWidget(self.led_screen)
 
-        self.control_panel = ControlPanel(self.config, self.audio_player)
+        self.control_panel = ControlPanel(self.config, self.gtm, self.audio_player)
         layout.addWidget(self.control_panel)
 
         container.setLayout(layout)
@@ -61,9 +61,10 @@ class LEDScreen(QLabel):
         return string
 
 class ControlPanel(QWidget):
-    def __init__(self, config: ApplicationConfig, audio_player: AudioPlayer) -> None:
+    def __init__(self, config: ApplicationConfig, gui_threading_manager: GUIThreadingManager, audio_player: AudioPlayer) -> None:
         super().__init__()
         self.audio_player = audio_player
+        self.gtm = gui_threading_manager
         self.config = config
         self._initialize_widget()
 
@@ -71,7 +72,7 @@ class ControlPanel(QWidget):
     def _initialize_widget(self) -> None:
         layout = QHBoxLayout()
 
-        self.preset_chooser = PresetChooser(self.config, self.audio_player)
+        self.preset_chooser = PresetChooser(self.config, self.audio_player, self.gtm)
         layout.addWidget(self.preset_chooser)
 
         self.playback_controls = PlaybackControls(self.audio_player)
@@ -81,9 +82,10 @@ class ControlPanel(QWidget):
 
 
 class PresetChooser(QWidget):
-    def __init__(self, config: ApplicationConfig, audio_player: AudioPlayer) -> None:
+    def __init__(self, config: ApplicationConfig, audio_player: AudioPlayer, gui_threading_manager: GUIThreadingManager) -> None:
         super().__init__()
         self.audio_player = audio_player
+        self.gtm = gui_threading_manager
         self.presets = config.presets
 
         self._initialize_widget()
@@ -97,7 +99,7 @@ class PresetChooser(QWidget):
             preset = self.presets[index]
             preset_name = preset["name"]
             preset_url = preset["url"]
-            preset_button = PresetButton(preset_name, preset_url, self.audio_player)
+            preset_button = PresetButton(preset_name, preset_url, self.audio_player, self.gtm)
 
             layout.addWidget(preset_button, 0, index)
 
@@ -105,7 +107,7 @@ class PresetChooser(QWidget):
             preset = self.presets[index]
             preset_name = preset["name"]
             preset_url = preset["url"]
-            preset_button = PresetButton(preset_name, preset_url, self.audio_player)
+            preset_button = PresetButton(preset_name, preset_url, self.audio_player, self.gtm)
 
             layout.addWidget(preset_button, 1, index-first_row_length)
 
@@ -113,9 +115,10 @@ class PresetChooser(QWidget):
 
 
 class PresetButton(QPushButton):
-    def __init__(self, name: str, url: str, audio_player: AudioPlayer) -> None:
+    def __init__(self, name: str, url: str, audio_player: AudioPlayer, gui_threading_manager: GUIThreadingManager) -> None:
         super().__init__()
         self.audio_player = audio_player
+        self.gtm = gui_threading_manager
         self.name = name
         self.url = url
 
@@ -124,6 +127,7 @@ class PresetButton(QPushButton):
         self.clicked.connect(self.on_click)
 
     def on_click(self):
+        self.gtm.display_preset_change(self.name)
         self.audio_player.set_media(self.url)
 
 

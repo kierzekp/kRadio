@@ -22,9 +22,20 @@ class GUIThreadingManager:
         task_desc = {"text_to_scroll": text_to_scroll, "duration": duration}
         self.led_screen_tasks.put(task_desc)
 
+    def display_preset_change(self, preset_name: str):
+        if self.task_queue_manager is not None:
+            self.stop_current_led_screen_task()
+            self.task_queue_manager.clear_queue()
+            sleep(0.1)
+            self.add_led_screen_task_to_queue(preset_name)
+
     def set_current_led_screen_task(self, task_desc: dict):
         self.current_led_screen_task = LEDScreenScrollTask(self.led_screen, task_desc)
         self.thread_pool.start(self.current_led_screen_task)
+
+    def stop_current_led_screen_task(self):
+        if self.current_led_screen_task is not None:
+            self.current_led_screen_task.kill()
 
     def kill_running_threads(self):
         if self.task_queue_manager is not None:
