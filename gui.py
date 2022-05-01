@@ -127,8 +127,14 @@ class PresetButton(QPushButton):
         self.clicked.connect(self.on_click)
 
     def on_click(self):
+        audio_was_playing = self.audio_player.playing
         self.gtm.display_preset_change(self.name)
+        if audio_was_playing:
+            self.audio_player.stop_media()
         self.audio_player.set_media(self.url)
+        if audio_was_playing:
+            self.audio_player.play_media()
+        
 
 
 class PlaybackControls(QWidget):
@@ -152,7 +158,6 @@ class PlaybackControls(QWidget):
         button_style = self.playback_button.style()
         icon = button_style.standardIcon(QStyle.SP_MediaPlay)
         self.playback_button.setIcon(icon)
-        self.playing = False
         self.playback_button.clicked.connect(self.on_click)
 
         layout.addWidget(self.playback_button)
@@ -163,24 +168,22 @@ class PlaybackControls(QWidget):
         self.audio_player.set_volume(self.dial.value())
 
     def on_click(self):
-        self.change_playback_status()
         self.control_playback()
+        self.change_playback_status()
 
     def change_playback_status(self):
         style = self.playback_button.style()
         play_icon = style.standardIcon(QStyle.SP_MediaPlay)
         stop_icon = style.standardIcon(QStyle.SP_MediaStop)
 
-        if not self.playing:
+        if self.audio_player.playing:
             self.playback_button.setIcon(stop_icon)
-            self.playing = True
         else:
             self.playback_button.setIcon(play_icon)
-            self.playing = False
         self.playback_button.update()
 
     def control_playback(self):
-        if self.playing:
-            self.audio_player.play_media()
-        else:
+        if self.audio_player.playing:
             self.audio_player.stop_media()
+        else:
+            self.audio_player.play_media()
