@@ -107,7 +107,7 @@ class LEDScreenScrollTask(QRunnable):
         sleep(self.time_between_updates)
 
     def scroll_text(self) -> None:
-        led_length = self.led_screen.config.led_screen_width
+        led_length = self.led_screen.config.led_screen["width"]
         text_length = len(self.text_to_scroll)
 
         if self.current_text_offset >= 0 and self.current_text_offset <= text_length:

@@ -48,14 +48,15 @@ class LEDScreen(QLabel):
         self.setPalette(palette)
 
         font_db = QFontDatabase()
-        font = font_db.font("Digital-7 Mono", "mono", 64)
+        font_name = self.config.led_screen["font"]
+        font = font_db.font(font_name, "mono", 64)
         self.setFont(font)
 
         self.setText(self.get_empty_string_for_led_width())
 
     def get_empty_string_for_led_width(self) -> str:
         string = ""
-        for i in range(0, self.config.led_screen_width):
+        for i in range(0, self.config.led_screen["width"]):
             string += " "
         return string
 
@@ -70,7 +71,7 @@ class ControlPanel(QWidget):
     def _initialize_widget(self) -> None:
         layout = QHBoxLayout()
 
-        self.preset_chooser = PresetChooser(self.config)
+        self.preset_chooser = PresetChooser(self.config, self.audio_player)
         layout.addWidget(self.preset_chooser)
 
         self.playback_controls = PlaybackControls(self.audio_player)
@@ -80,11 +81,10 @@ class ControlPanel(QWidget):
 
 
 class PresetChooser(QWidget):
-    def __init__(self, config: ApplicationConfig) -> None:
+    def __init__(self, config: ApplicationConfig, audio_player: AudioPlayer) -> None:
         super().__init__()
-        self.config = config
-
-        self.presets = ["1", "2", "3", "4", "5", "6"]
+        self.audio_player = audio_player
+        self.presets = config.presets
 
         self._initialize_widget()
 
@@ -95,19 +95,36 @@ class PresetChooser(QWidget):
 
         for index in range(0, first_row_length):
             preset = self.presets[index]
-            preset_button = QPushButton()
-            preset_button.setText(str(index))
+            preset_name = preset["name"]
+            preset_url = preset["url"]
+            preset_button = PresetButton(preset_name, preset_url, self.audio_player)
 
             layout.addWidget(preset_button, 0, index)
 
         for index in range(first_row_length, len(self.presets)):
             preset = self.presets[index]
-            preset_button = QPushButton()
-            preset_button.setText(str(index))
+            preset_name = preset["name"]
+            preset_url = preset["url"]
+            preset_button = PresetButton(preset_name, preset_url, self.audio_player)
 
             layout.addWidget(preset_button, 1, index-first_row_length)
 
         self.setLayout(layout)
+
+
+class PresetButton(QPushButton):
+    def __init__(self, name: str, url: str, audio_player: AudioPlayer) -> None:
+        super().__init__()
+        self.audio_player = audio_player
+        self.name = name
+        self.url = url
+
+        self.setText(name)
+
+        self.clicked.connect(self.on_click)
+
+    def on_click(self):
+        self.audio_player.set_media(self.url)
 
 
 class PlaybackControls(QWidget):

@@ -14,7 +14,8 @@ def register_included_fonts() -> None:
 
 if __name__ == "__main__":
     app = QApplication([])
-    config = ApplicationConfig()
+    config = ApplicationConfig("config.json")
+
     thread_pool = QThreadPool()
     gui_threading_manager = GUIThreadingManager(thread_pool)
     audio_player = AudioPlayer()
